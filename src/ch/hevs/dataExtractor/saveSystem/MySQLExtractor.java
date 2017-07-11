@@ -2,6 +2,7 @@ package ch.hevs.dataExtractor.saveSystem;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.PrintWriter;
 import java.sql.*;
 
 /**
@@ -35,7 +36,7 @@ public class MySQLExtractor implements iExtractor {
     }
 
     @Override
-    public void importMeasure(int set, File f) {
+    public void importMeasure(int set, String fileName) {
         Statement stmt;
         String response = "";
 
@@ -60,11 +61,11 @@ public class MySQLExtractor implements iExtractor {
             e.printStackTrace();
         }
 
-        saveInFile(f, response);
+        saveInFile(fileName, response);
     }
 
     @Override
-    public void importSettings(File f) {
+    public void importSettings(String fileName) {
         Statement stmt;
         String response = "";
 
@@ -90,7 +91,7 @@ public class MySQLExtractor implements iExtractor {
             rs = stmt.executeQuery(query);
             while(rs.next()) {
                 response = response
-                        + Integer.toString(rs.getInt("setID")) + ","
+                        + String.format("%03d",(rs.getInt("setID"))) + ","
                         + rs.getString("product") + ","
                         + rs.getString("gateway") + ","
                         + rs.getString("device") + ","
@@ -98,18 +99,25 @@ public class MySQLExtractor implements iExtractor {
                         + rs.getString("deviceType") + ","
                         + rs.getBoolean("battery") + ","
                         + rs.getString("topology") + ","
-                        + Integer.toString(rs.getInt("period")) + ","
-                        + Integer.toString(rs.getInt("nbrMeasures")) + ";\n";
+                        + String.format("%05d",(rs.getInt("period"))) + ","
+                        + String.format("%03d",(rs.getInt("nbrMeasures"))) + ";\n";
             }
 
         } catch(Exception e) {
             e.printStackTrace();
         }
 
-        saveInFile(f, response);
+        saveInFile(fileName, response);
     }
 
-    private void saveInFile(File f, String s) {
+    private void saveInFile(String fileName, String s) {
         System.out.println(s);
+        try {
+            PrintWriter out = new PrintWriter(fileName);
+            out.println(s);
+            out.close();
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
     }
 }

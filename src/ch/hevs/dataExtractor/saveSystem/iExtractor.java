@@ -9,7 +9,7 @@ public interface iExtractor {
 
     void initConnection();
 
-    void importMeasure(int set, File f);
+    void importMeasure(int set, String fileName);
 
-    void importSettings(File f);
+    void importSettings(String fileName);
 }
