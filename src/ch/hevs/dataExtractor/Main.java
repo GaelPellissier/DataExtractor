@@ -16,9 +16,9 @@ public class Main {
 
         File settings = new File("Settings.csv");
         ex.importSettings(settings);
-        /*for(int i = 0; i < ex.totalNbrOfSet; i++) {
+        for(int i = 0; i < ex.totalNbrOfSet; i++) {
             File measures = new File("MeasureSet" + String.format("%03d", (i + 1)) + ".csv");
             ex.importMeasure(i + 1, measures);
-        }*/
+        }
     }
 }

@@ -45,7 +45,16 @@ public class MySQLExtractor implements iExtractor {
             String query ="SELECT * FROM Measure WHERE measureSetID=" + set + ";";
             ResultSet rs = stmt.executeQuery(query);
             while(rs.next()) {
-
+                response = response
+                        + String.format("%02d",(rs.getInt("measureSetID"))) + ","
+                        + String.format("%03d",(rs.getInt("id"))) + ","
+                        + String.valueOf(rs.getLong("invalidateTime")) + ","
+                        + String.valueOf(rs.getLong("updateTime")) + ","
+                        + rs.getString("isFailed") + ","
+                        + String.format("%03d",(rs.getLong("ping"))) + ","
+                        + rs.getString("expectedState") + ","
+                        + rs.getString("state") + ","
+                        + Integer.toString(rs.getInt("rssi")) + ";\n";
             }
         } catch(Exception e) {
             e.printStackTrace();
