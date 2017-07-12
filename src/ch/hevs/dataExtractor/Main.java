@@ -17,5 +17,6 @@ public class Main {
             String measures = "MeasureSet" + String.format("%03d", (i + 1)) + ".csv";
             ex.importMeasure(i + 1, measures);
         }
+        System.out.println("Extraction ended");
     }
 }

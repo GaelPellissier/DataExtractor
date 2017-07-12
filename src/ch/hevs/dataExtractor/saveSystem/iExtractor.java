@@ -1,7 +1,5 @@
 package ch.hevs.dataExtractor.saveSystem;
 
-import java.io.File;
-
 /**
  * Created by gael on 11.07.17.
  */

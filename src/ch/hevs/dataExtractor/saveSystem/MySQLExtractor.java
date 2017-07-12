@@ -1,7 +1,7 @@
 package ch.hevs.dataExtractor.saveSystem;
 
 import java.io.File;
-import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.sql.*;
 
@@ -111,10 +111,13 @@ public class MySQLExtractor implements iExtractor {
     }
 
     private void saveInFile(String fileName, String s) {
-        System.out.println(s);
+        File f = new File(fileName);
         try {
-            PrintWriter out = new PrintWriter(fileName);
-            out.println(s);
+            if(!f.exists()){
+                f.createNewFile();
+            }
+            PrintWriter out = new PrintWriter(new FileWriter(f, true));
+            out.append(s);
             out.close();
         } catch(Exception e) {
             e.printStackTrace();
