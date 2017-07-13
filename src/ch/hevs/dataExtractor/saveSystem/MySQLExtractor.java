@@ -78,16 +78,15 @@ public class MySQLExtractor implements iExtractor {
             }
 
             query = "SELECT MeasureSet.id AS setID, Techno.product AS product, Gateway.name AS gateway, Device.model AS device,"
-                    + " Device.serialNbr AS serial, TypeDevice.kindDevice AS deviceType, TypeDevice.battery AS battery,"
-                    + " PositionDevice.description AS topology, MeasureSet.period AS period, MeasureSet.nbrMeasures AS nbrMeasures"
-                    + " FROM MeasureSet INNER JOIN"
+                    + " Device.serialNbr AS serialNbr, TypeDevice.kindDevice AS deviceType, TypeDevice.battery AS battery,"
+                    + " MeasureSet.distanceToGateway AS distance, MeasureSet.nbrWalls AS topology, MeasureSet.period AS period,"
+                    + " MeasureSet.nbrMeasures AS nbrMeasures FROM MeasureSet INNER JOIN"
                     + " (SELECT Technology.name AS product, Gateway.id AS id FROM Technology"
                     + " INNER JOIN Gateway ON Gateway.technologyID = Technology.id) AS Techno"
                     + " ON Techno.id = MeasureSet.gatewayID INNER JOIN Gateway ON Gateway.id = MeasureSet.gatewayID"
                     + " INNER JOIN Device ON Device.id = MeasureSet.deviceID LEFT OUTER JOIN"
                     + " (SELECT Device.id AS id, DeviceType.name AS kindDevice, DeviceType.battery AS battery FROM DeviceType"
-                    + " INNER JOIN Device ON DeviceType.id = Device.deviceTypeID) AS TypeDevice ON TypeDevice.id = MeasureSet.deviceID"
-                    + " INNER JOIN PositionDevice ON PositionDevice.id = MeasureSet.positionDeviceID;";
+                    + " INNER JOIN Device ON DeviceType.id = Device.deviceTypeID) AS TypeDevice ON TypeDevice.id = MeasureSet.deviceID;";
             rs = stmt.executeQuery(query);
             while(rs.next()) {
                 response = response
@@ -95,10 +94,11 @@ public class MySQLExtractor implements iExtractor {
                         + rs.getString("product") + ","
                         + rs.getString("gateway") + ","
                         + rs.getString("device") + ","
-                        + rs.getString("serial") + ","
+                        + rs.getString("serialNbr") + ","
                         + rs.getString("deviceType") + ","
                         + rs.getBoolean("battery") + ","
-                        + rs.getString("topology") + ","
+                        + String.format("%02d",(rs.getInt("distance"))) + ","
+                        + String.format("%02d",(rs.getInt("topology"))) + ","
                         + String.format("%05d",(rs.getInt("period"))) + ","
                         + String.format("%03d",(rs.getInt("nbrMeasures"))) + ";\n";
             }
