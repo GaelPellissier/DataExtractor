@@ -9,5 +9,5 @@ public interface iExtractor {
 
     void importMeasure(int set, String fileName);
 
-    void importSettings(String fileName);
+    void importSettings(int firstSet, int lastSet, String fileName);
 }

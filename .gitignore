@@ -1,5 +1,7 @@
 gitignore.swp
 DataExtractor.iml
+*.csv
 .idea/
 lib/
 out/
+src/META-INF
