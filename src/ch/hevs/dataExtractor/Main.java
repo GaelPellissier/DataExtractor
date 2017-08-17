@@ -4,63 +4,62 @@ import ch.hevs.dataExtractor.saveSystem.MySQLExtractor;
 
 /**
  * @file    Main.java
- * @brief   Class extracting the data from the database and generates a .csv file.
+ * @brief   Main class of this software.
  *
  * @class   Main
- * @brief   Class extracting the data from the database and generates a .csv file.
- * @details This class is made to access a MySQL database and create for each measure set a new .csv file containing all the measurement datas.
+ * @brief   Main class of this software.
+ * @details <h2>Generalities</h2>
+ *          This class is made to access a saving system (for example a database) and import the wanted datas in a file.<br>
+ *          The file is a .csv file called "temp.csv" and it is created in the root directory where the software is located.<br>
+ *          <h2>Working</h2>
+ *          While running, this software will connect itself to any database or saving system defined (in this case, a MySQL database).<br>
+ *          Then it will import the datas in the .csv file. The datas will correspond to the device whose id is in the first argument
+ *          (unless it is the -h option) and from the 2nd argument tiemstamp to 24h later.<br>
+ *          <h2>Settings</h2>
+ *          To run this software, use the command below:<br>
+ *          <blockquote>java -jar DataExtractor.jar [OPTION] deviceID firstTimeMeasure</blockquote>
+ *
+ *          OPTION:
+ *              <ul>
+ *                  <li>-h: displays help menu.</li>
+ *              </ul>
  *
  * @author G.Pellissier
  * @date    07.07.2017
  */
 public class Main {
     public static void main(String[] args) {
+        int n = args.length;
 
-        boolean valid = false;
-        int firstSet = 1, lastSet = 1;
-        MySQLExtractor ex = new MySQLExtractor();
-        ex.initConnection();
+        if(n != 2 || args[0].equals("-h")) {
+            System.out.println("DataExtractor Tool - Help\n");
+            System.out.println("NAME:\n     DataExtractor\n");
+            System.out.println("SYNOPSIS:\n     DataExtractor [OPTION] deviceID firstMeasureTime\n");
+            System.out.println("DESCRIPTION:\n      Run the DataExtractor Tool to get saved datas and importing them in a .csv file.\n" +
+                    "       (The time between the first and the last measure is 24h)\n");
+            System.out.println("OPTION:");
+            System.out.println("        -h, display help. No other argument needed.\n");
+            System.out.println("ARGUMENTS:");
+            System.out.println("        deviceID, ID of the wanted device as it is in the saving system\n" +
+                    "        firstMeasureTime, timestamp in millisecond of the first measure to import in the file");
 
-        // File name for saving the settings. Each measure set is a new line
-        String settings = "Settings.csv";
-        switch(args.length) {
-            case 0:
-                // No arguments -> importing the full sets and measures corresponding
-                firstSet = 1;
-                lastSet = ex.totalNbrOfSet;
-                valid = true;
-                break;
-
-            case 2:
-                // 2 arguments -> importing the sets and measures from args[0] to args[1]
-                firstSet = Integer.parseInt(args[0]);
-                lastSet = Integer.parseInt(args[1]);
-
-                // In case the user exchanges the 2 arguments last <-> first
-                if(firstSet > lastSet) {
-                    int temp = lastSet;
-                    lastSet = firstSet;
-                    firstSet = temp;
-                }
-
-                valid = true;
-                break;
-
-            default:
-                // Error in the number of arguments -> do nothing
-                System.out.println("Invalid number of arguments. Try again with :");
-                System.out.println("No arguments to import all the measures");
-                System.out.println("2 Arguments to import all the measures from the sets whose ID are between first (included). and second arguments (included).");
+            System.exit(0);
         }
+        else {
+            final long DAY_DURATION_IN_MS = 86400000;
+            long timeBegin = 0;
+            MySQLExtractor ex = new MySQLExtractor();
 
+            ex.initConnection();
 
-        if(valid) {
-            ex.importSettings(firstSet, lastSet, settings);
-            for (int i = firstSet; i <= lastSet; i++) {
-                String measures = "MeasureSet" + String.format("%03d", i) + ".csv";
-                ex.importMeasure(i, measures);
+            try {
+                timeBegin = Long.parseLong(args[1]);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-            System.out.println("Extraction ended");
+
+            long timeEnd = timeBegin + DAY_DURATION_IN_MS + 1000;
+            ex.importMeasure(args[0], timeBegin, timeEnd);
         }
     }
 }

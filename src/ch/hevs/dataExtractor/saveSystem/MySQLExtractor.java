@@ -6,12 +6,26 @@ import java.io.PrintWriter;
 import java.sql.*;
 
 /**
- * Created by gael on 07.07.17.
+ * @file    MySQLExtractor.java
+ * @brief   Extractor for a MySQL database.
+ *
+ * @class   MySQLExtractor
+ * @biref   Extractor for a MySQL database.
+ * @details This class implements the interface <i>iExtractor</i>. It will connects itself to a MySQL database and import the wanted datas.
+ *
+ * @author  G.Pellissier
+ * @date    07.07.17.
  */
 public class MySQLExtractor implements iExtractor {
-    private Connection conn;
-    public int totalNbrOfSet;
 
+    /**
+     * @details Object used to connect the software to the MySQL database.
+     */
+    private Connection conn;
+
+    /**
+     * @details Opens a connection between the software and the database.
+     */
     @Override
     public void initConnection() {
         final String driverURL = "com.mysql.jdbc.Driver";
@@ -24,7 +38,6 @@ public class MySQLExtractor implements iExtractor {
         final String userName = "remote";
         final String password = "user";
 
-        Statement stmt;
         try {
             // Load the JDBC driver for MySQL connection
             Class.forName(driverURL).newInstance();
@@ -32,96 +45,57 @@ public class MySQLExtractor implements iExtractor {
             // Connection to database
             conn = DriverManager.getConnection(url + database, userName, password);
 
-            //Initialize totalNbrOfSet
-            stmt = conn.createStatement();
-            String query = "SELECT Max(id) AS maxSet FROM MeasureSet;";
-            ResultSet rs = stmt.executeQuery(query);
-            while(rs.next()) {
-                this.totalNbrOfSet = rs.getInt("maxSet");
-            }
-
         } catch(Exception ex) {
             ex.printStackTrace();
         }
     }
 
+    /**
+     * @details Method used to import the datas in the .csv file.
+     * @param   id                  : id of the device whose measures are needed.
+     * @param   firstMeasureTime    : Timestamp for the first measure to import
+     * @param   lastMeasureTime     : Timestamp for the last measure to import
+     */
     @Override
-    public void importMeasure(int set, String fileName) {
+    public void importMeasure(String id, long firstMeasureTime, long lastMeasureTime) {
         Statement stmt;
         String response = "";
 
         try {
             stmt = conn.createStatement();
 
-            if(set > totalNbrOfSet) {
-                set = totalNbrOfSet;
-            }
+            String query = "SELECT deviceID, technology, ping, rssi, requestOK, valid, expState, state" +
+                    " FROM MeasureSet INNER JOIN  (SELECT Measure.measureSetID AS setID, Device.id AS deviceID, Device.technology AS technology," +
+                    " Measure.requestTime AS time, Measure.requestOK AS requestOK, Measure.rssi AS rssi," +
+                    " Measure.valid AS valid, Measure.ping AS ping, Measure.expectedState AS expState, Measure.state AS state" +
+                    " FROM Measure INNER JOIN Device ON Measure.deviceID = Device.id) AS Datas" +
+                    " ON Datas.setID = MeasureSet.id AND Datas.deviceID=" + id +
+                    " AND time>=" + firstMeasureTime + " AND time<"+ lastMeasureTime + " ORDER BY Datas.time;";
 
-            String query = "SELECT * FROM Measure WHERE measureSetID=" + set + ";";
             ResultSet rs = stmt.executeQuery(query);
             while(rs.next()) {
                 response = response
-                        + String.format("%04d",(rs.getInt("measureSetID"))) + ","
-                        + String.format("%05d",(rs.getInt("id"))) + ","
-                        + String.valueOf(rs.getLong("invalidateTime")) + ","
-                        + String.valueOf(rs.getLong("updateTime")) + ","
-                        + rs.getString("isFailed") + ","
-                        + String.format("%03d",(rs.getLong("ping"))) + ","
-                        + rs.getString("expectedState") + ","
-                        + rs.getString("state") + ","
+                        + Integer.toString(rs.getInt("deviceID")) + ","
+                        + rs.getString("technology") + ","
+                        + String.format("%04d",(rs.getLong("ping"))) + ","
                         + Integer.toString(rs.getInt("rssi")) + ","
-                        + rs.getString("value") + ";\n";
+                        + Integer.toString(rs.getInt("requestOK")) + ","
+                        + Integer.toString(rs.getInt("valid")) + ","
+                        + rs.getString("expState") + ","
+                        + rs.getString("state") + ";\n";
             }
         } catch(Exception e) {
             e.printStackTrace();
         }
 
-        saveInFile(fileName, response);
+        saveInFile("temp.csv", response);
     }
 
-    @Override
-    public void importSettings(int firstSet, int lastSet, String fileName) {
-        Statement stmt;
-        String response = "";
-
-        try {
-            stmt = conn.createStatement();
-
-
-            String query = "SELECT MeasureSet.id AS setID, Techno.product AS product, Gateway.name AS gateway, Device.model AS device,"
-                    + " Device.serialNbr AS serialNbr, TypeDevice.kindDevice AS deviceType, TypeDevice.battery AS battery,"
-                    + " MeasureSet.distanceToGateway AS distance, MeasureSet.nbrWalls AS topology, MeasureSet.period AS period,"
-                    + " MeasureSet.nbrMeasures AS nbrMeasures FROM MeasureSet INNER JOIN"
-                    + " (SELECT Technology.name AS product, Gateway.id AS id FROM Technology"
-                    + " INNER JOIN Gateway ON Gateway.technologyID = Technology.id) AS Techno"
-                    + " ON Techno.id = MeasureSet.gatewayID INNER JOIN Gateway ON Gateway.id = MeasureSet.gatewayID"
-                    + " INNER JOIN Device ON Device.id = MeasureSet.deviceID LEFT OUTER JOIN"
-                    + " (SELECT Device.id AS id, DeviceType.name AS kindDevice, DeviceType.battery AS battery FROM DeviceType"
-                    + " INNER JOIN Device ON DeviceType.id = Device.deviceTypeID) AS TypeDevice ON TypeDevice.id = MeasureSet.deviceID"
-                    + " WHERE (MeasureSet.id>=" + firstSet + ") AND (MeasureSet.id<=" + lastSet + ");";
-            ResultSet rs = stmt.executeQuery(query);
-            while(rs.next()) {
-                response = response
-                        + String.format("%04d",(rs.getInt("setID"))) + ","
-                        + rs.getString("product") + ","
-                        + rs.getString("gateway") + ","
-                        + rs.getString("device") + ","
-                        + rs.getString("serialNbr") + ","
-                        + rs.getString("deviceType") + ","
-                        + rs.getBoolean("battery") + ","
-                        + String.format("%02d",(rs.getInt("distance"))) + ","
-                        + String.format("%02d",(rs.getInt("topology"))) + ","
-                        + String.format("%05d",(rs.getInt("period"))) + ","
-                        + String.format("%03d",(rs.getInt("nbrMeasures"))) + ";\n";
-            }
-
-        } catch(Exception e) {
-            e.printStackTrace();
-        }
-
-        saveInFile(fileName, response);
-    }
-
+    /**
+     * @details  Method that creates the new file and fill it in with the datas collected.
+     * @param   fileName    : Name of the file to create.
+     * @param   s           : Expected content of the file.
+     */
     private void saveInFile(String fileName, String s) {
         File f = new File(fileName);
         try {
